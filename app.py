@@ -12,7 +12,11 @@ st.set_page_config(page_title="Real-Time Zone Scanner", layout="wide")
 refresh_interval = st.number_input("Refresh Interval (seconds)", 5, 300, 30)
 count = st_autorefresh(interval=refresh_interval * 1000, limit=None, key="zone_refresh")
 
-# --- Telegram Setup ---
+# --- Telegram Setup using Streamlit Secrets ---
+# In Streamlit Cloud Secrets:
+# BOT_TOKEN="your_telegram_bot_token_here"
+# CHAT_ID="your_telegram_chat_id_here"
+
 BOT_TOKEN = st.secrets["BOT_TOKEN"]
 CHAT_ID = st.secrets["CHAT_ID"]
 bot = Bot(token=BOT_TOKEN)
