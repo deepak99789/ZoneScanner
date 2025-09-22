@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from tradingview_ta import TA_Handler, Interval
 from datetime import datetime
-from telegram import Bot
 from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Real-Time Zone Scanner", layout="wide")
@@ -12,23 +11,7 @@ st.set_page_config(page_title="Real-Time Zone Scanner", layout="wide")
 refresh_interval = st.number_input("Refresh Interval (seconds)", 5, 300, 30)
 count = st_autorefresh(interval=refresh_interval * 1000, limit=None, key="zone_refresh")
 
-# --- Telegram Setup using Streamlit Secrets ---
-# In Streamlit Cloud Secrets:
-# BOT_TOKEN="your_telegram_bot_token_here"
-# CHAT_ID="your_telegram_chat_id_here"
-
-BOT_TOKEN = st.secrets["BOT_TOKEN"]
-CHAT_ID = st.secrets["CHAT_ID"]
-bot = Bot(token=BOT_TOKEN)
-
-def send_telegram_message(msg):
-    bot.send_message(chat_id=CHAT_ID, text=msg)
-
-# --- Track sent alerts to avoid duplicates ---
-if "sent_zones" not in st.session_state:
-    st.session_state.sent_zones = set()
-
-st.title("📊 Real-Time Multi-Pair Zone Screener + Alerts")
+st.title("📊 Real-Time Multi-Pair Zone Screener")
 
 # --- Market / Pair Selection ---
 market_type = st.selectbox("Market Type", ["Forex", "Commodities", "Stocks / Indices"])
@@ -110,14 +93,6 @@ for asset in selected_assets:
                 "distance": round(abs(candle["close"]-candle["high"]),5)
             }
             zones.append(zone_info)
-            
-            # --- Send Telegram alert only for new zones ---
-            zone_id = f"{asset}_{z_type}_{candle['time'].strftime('%H:%M:%S')}"
-            if zone_id not in st.session_state.sent_zones:
-                st.session_state.sent_zones.add(zone_id)
-                send_telegram_message(f"{asset} - {z_type} zone detected at {candle['time'].strftime('%H:%M:%S')}")
-                st.balloons()
-                
     except Exception as e:
         st.write(f"Error fetching {asset}: {e}")
 
