@@ -40,16 +40,21 @@ else:
     selected_assets = st.multiselect("Select Stocks / Indices", stocks[region], default=[stocks[region][0]])
 
 # --- Timeframe / Zone Type / Fresh-Tested ---
-timeframe = st.selectbox("Timeframe", ["1m","5m","15m","1h","2h","4h","5h","6h","8h","12h","1d","1w"])
+timeframe = st.selectbox("Timeframe", ["1m","5m","15m","1h","2h","4h","12h","1d","1w"])
 zone_type = st.multiselect("Zone Type", ["Supply","Demand","Both"], default=["Both"])
 fresh_option = st.radio("Zone Status", ["Fresh","Tested","All"], index=0)
 
-# --- Interval Map ---
+# --- Interval Map (only supported intervals) ---
 interval_map = {
-    "1m": Interval.INTERVAL_1_MINUTE,"5m": Interval.INTERVAL_5_MINUTES,"15m": Interval.INTERVAL_15_MINUTES,
-    "1h": Interval.INTERVAL_1_HOUR,"2h": Interval.INTERVAL_2_HOURS,"4h": Interval.INTERVAL_4_HOURS,
-    "5h": Interval.INTERVAL_5_HOURS,"6h": Interval.INTERVAL_6_HOURS,"8h": Interval.INTERVAL_8_HOURS,
-    "12h": Interval.INTERVAL_12_HOURS,"1d": Interval.INTERVAL_1_DAY,"1w": Interval.INTERVAL_1_WEEK
+    "1m": Interval.INTERVAL_1_MINUTE,
+    "5m": Interval.INTERVAL_5_MINUTES,
+    "15m": Interval.INTERVAL_15_MINUTES,
+    "1h": Interval.INTERVAL_1_HOUR,
+    "2h": Interval.INTERVAL_2_HOURS,
+    "4h": Interval.INTERVAL_4_HOURS,
+    "12h": Interval.INTERVAL_12_HOURS,
+    "1d": Interval.INTERVAL_1_DAY,
+    "1w": Interval.INTERVAL_1_WEEK
 }
 
 # --- Helper Functions ---
@@ -63,8 +68,13 @@ def get_handler(symbol):
 
 def get_latest_candle(handler):
     analysis = handler.get_analysis()
-    return {"time": datetime.now(), "open": analysis.indicators["open"], "high": analysis.indicators["high"], 
-            "low": analysis.indicators["low"], "close": analysis.indicators["close"]}
+    return {
+        "time": datetime.now(),
+        "open": analysis.indicators["open"],
+        "high": analysis.indicators["high"],
+        "low": analysis.indicators["low"],
+        "close": analysis.indicators["close"]
+    }
 
 def detect_zone(candle):
     body = abs(candle["close"]-candle["open"])
@@ -80,7 +90,12 @@ zones = []
 for asset in selected_assets:
     try:
         handler = get_handler(asset)
-        candle = get_latest_candle(handler)
+        try:
+            candle = get_latest_candle(handler)
+        except Exception as e:
+            st.warning(f"Could not fetch latest candle for {asset}: {e}")
+            continue
+
         z_type = detect_zone(candle)
         if z_type:
             zone_info = {
@@ -93,8 +108,9 @@ for asset in selected_assets:
                 "distance": round(abs(candle["close"]-candle["high"]),5)
             }
             zones.append(zone_info)
+
     except Exception as e:
-        st.write(f"Error fetching {asset}: {e}")
+        st.warning(f"Error processing {asset}: {e}")
 
 df_zones = pd.DataFrame(zones)
 for col in ["pair","time","high","low","zone_type","fresh","distance"]:
@@ -111,26 +127,31 @@ elif fresh_option=="Tested":
 
 # --- Display Table ---
 st.subheader("Latest Detected Zones")
-st.dataframe(df_zones.tail(20))
+if df_zones.empty:
+    st.info("No zones detected yet.")
+else:
+    st.dataframe(df_zones.tail(20))
 
 # --- Plot Extendable Zones ---
-fig = go.Figure()
-for _, row in df_zones.iterrows():
-    color = "Green" if row["zone_type"]=="Demand" else "Red"
-    opacity = 0.5 if row["fresh"] else 0.2
+if not df_zones.empty:
+    fig = go.Figure()
+    for _, row in df_zones.iterrows():
+        color = "Green" if row["zone_type"]=="Demand" else "Red"
+        opacity = 0.5 if row["fresh"] else 0.2
 
-    x0 = row["time"] if isinstance(row["time"], datetime) else pd.to_datetime(row["time"])
-    
-    fig.add_shape(
-        type="rect",
-        x0=x0,
-        x1=datetime.now(),
-        y0=row["low"],
-        y1=row["high"],
-        line=dict(color=color),
-        fillcolor=color,
-        opacity=opacity
-    )
+        x0 = pd.to_datetime(row["time"])
+        x1 = datetime.now()
 
-fig.update_xaxes(type="date")
-st.plotly_chart(fig)
+        fig.add_shape(
+            type="rect",
+            x0=x0,
+            x1=x1,
+            y0=row["low"],
+            y1=row["high"],
+            line=dict(color=color),
+            fillcolor=color,
+            opacity=opacity
+        )
+
+    fig.update_xaxes(type="date")
+    st.plotly_chart(fig)
