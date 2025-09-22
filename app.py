@@ -15,7 +15,7 @@ count = st_autorefresh(interval=refresh_interval * 1000, limit=None, key="zone_r
 # --- Telegram Setup ---
 BOT_TOKEN = st.secrets["8470158775:AAFyD37laDEbUVnPm_bQmlypBX6ZBQMq_Rc"]
 CHAT_ID = st.secrets["-1002807159074"]
-bot = Bot(token=8470158775:AAFyD37laDEbUVnPm_bQmlypBX6ZBQMq_Rc)
+bot = Bot(token=BOT_TOKEN)
 
 def send_telegram_message(msg):
     bot.send_message(chat_id=-1002807159074, text=msg)
