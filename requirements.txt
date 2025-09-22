@@ -3,3 +3,4 @@ pandas
 plotly
 tradingview_ta
 streamlit-autorefresh
+
