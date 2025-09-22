@@ -16,7 +16,7 @@ st.title("📊 Real-Time Multi-Pair Zone Screener")
 # --- Market / Pair Selection ---
 market_type = st.selectbox("Market Type", ["Forex", "Commodities", "Stocks / Indices"])
 selected_assets = []
-if market_type=="Forex":
+if market_type == "Forex":
     forex_base = st.selectbox("Base Currency", ["USD","GBP","EUR","NZD","CHF"])
     forex_pairs = {
         "USD":["USDJPY","USDCAD","USDCHF","AUDUSD","NZDUSD","EURUSD","GBPUSD"],
@@ -26,7 +26,7 @@ if market_type=="Forex":
         "CHF":["USDCHF","EURCHF","CHFJPY","CHFGBP","CHFNZD"]
     }
     selected_assets = st.multiselect("Select Pairs", forex_pairs[forex_base], default=forex_pairs[forex_base])
-elif market_type=="Commodities":
+elif market_type == "Commodities":
     selected_assets = st.multiselect("Select Commodities", ["Gold","Silver","Zinc","Aluminium","Copper","Crude Oil"], default=["Gold","Silver"])
 else:
     region = st.selectbox("Region / Index", ["US","Japan","UK","Germany","India"])
@@ -40,11 +40,11 @@ else:
     selected_assets = st.multiselect("Select Stocks / Indices", stocks[region], default=[stocks[region][0]])
 
 # --- Timeframe / Zone Type / Fresh-Tested ---
-timeframe = st.selectbox("Timeframe", ["1m","5m","15m","1h","2h","4h","12h","1d","1w"])
+timeframe = st.selectbox("Timeframe", ["1m","5m","15m","1h","2h","4h","1d","1w"])
 zone_type = st.multiselect("Zone Type", ["Supply","Demand","Both"], default=["Both"])
 fresh_option = st.radio("Zone Status", ["Fresh","Tested","All"], index=0)
 
-# --- Interval Map (only supported intervals) ---
+# --- Interval Map (supported only) ---
 interval_map = {
     "1m": Interval.INTERVAL_1_MINUTE,
     "5m": Interval.INTERVAL_5_MINUTES,
@@ -52,16 +52,15 @@ interval_map = {
     "1h": Interval.INTERVAL_1_HOUR,
     "2h": Interval.INTERVAL_2_HOURS,
     "4h": Interval.INTERVAL_4_HOURS,
-    "12h": Interval.INTERVAL_12_HOURS,
     "1d": Interval.INTERVAL_1_DAY,
     "1w": Interval.INTERVAL_1_WEEK
 }
 
 # --- Helper Functions ---
 def get_handler(symbol):
-    if market_type=="Forex":
+    if market_type == "Forex":
         return TA_Handler(symbol=symbol, screener="forex", exchange="FX_IDC", interval=interval_map[timeframe])
-    elif market_type=="Commodities":
+    elif market_type == "Commodities":
         return TA_Handler(symbol=symbol, screener="commodities", exchange="COMEX", interval=interval_map[timeframe])
     else:
         return TA_Handler(symbol=symbol, screener="america", exchange="NASDAQ", interval=interval_map[timeframe])
@@ -82,7 +81,7 @@ def detect_zone(candle):
     if range_ == 0:
         return None
     if body / range_ < 0.2:  # relative body < 20% of candle
-        return "Demand" if candle["close"]>candle["open"] else "Supply"
+        return "Demand" if candle["close"] > candle["open"] else "Supply"
     return None
 
 # --- Real-Time Scan ---
@@ -105,7 +104,7 @@ for asset in selected_assets:
                 "low": candle["low"],
                 "zone_type": z_type,
                 "fresh": True,
-                "distance": round(abs(candle["close"]-candle["high"]),5)
+                "distance": round(abs(candle["close"] - candle["high"]), 5)
             }
             zones.append(zone_info)
 
@@ -120,10 +119,10 @@ for col in ["pair","time","high","low","zone_type","fresh","distance"]:
 # --- Apply Filters ---
 if zone_type and "Both" not in zone_type:
     df_zones = df_zones[df_zones["zone_type"].isin(zone_type)]
-if fresh_option=="Fresh":
-    df_zones = df_zones[df_zones["fresh"]==True]
-elif fresh_option=="Tested":
-    df_zones = df_zones[df_zones["fresh"]==False]
+if fresh_option == "Fresh":
+    df_zones = df_zones[df_zones["fresh"] == True]
+elif fresh_option == "Tested":
+    df_zones = df_zones[df_zones["fresh"] == False]
 
 # --- Display Table ---
 st.subheader("Latest Detected Zones")
@@ -136,7 +135,7 @@ else:
 if not df_zones.empty:
     fig = go.Figure()
     for _, row in df_zones.iterrows():
-        color = "Green" if row["zone_type"]=="Demand" else "Red"
+        color = "Green" if row["zone_type"] == "Demand" else "Red"
         opacity = 0.5 if row["fresh"] else 0.2
 
         x0 = pd.to_datetime(row["time"])
