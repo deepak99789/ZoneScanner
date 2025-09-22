@@ -1,0 +1,6 @@
+streamlit
+pandas
+plotly
+tradingview_ta
+python-telegram-bot
+streamlit-autorefresh
