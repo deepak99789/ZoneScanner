@@ -13,12 +13,12 @@ refresh_interval = st.number_input("Refresh Interval (seconds)", 5, 300, 30)
 count = st_autorefresh(interval=refresh_interval * 1000, limit=None, key="zone_refresh")
 
 # --- Telegram Setup ---
-BOT_TOKEN = st.secrets["8470158775:AAFyD37laDEbUVnPm_bQmlypBX6ZBQMq_Rc"]
-CHAT_ID = st.secrets["-1002807159074"]
+BOT_TOKEN = st.secrets["BOT_TOKEN"]
+CHAT_ID = st.secrets["CHAT_ID"]
 bot = Bot(token=BOT_TOKEN)
 
 def send_telegram_message(msg):
-    bot.send_message(chat_id=-1002807159074, text=msg)
+    bot.send_message(chat_id=CHAT_ID, text=msg)
 
 # --- Track sent alerts to avoid duplicates ---
 if "sent_zones" not in st.session_state:
